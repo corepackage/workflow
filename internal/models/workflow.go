@@ -1,5 +1,6 @@
 package models
 
+// Workflow - Structure of workflow configuration
 type Workflow struct {
 	Name       string       `json:"name" yaml:"name"`
 	ID         string       `json:"id" yaml:"id"`
@@ -10,11 +11,13 @@ type Workflow struct {
 	Steps      []Step       `json:"steps" yaml:"steps"`
 }
 
+// PrimaryKey - Unique key to identify a single instance
 type PrimaryKey struct {
 	PKey  string `json:"key" yaml:"key"`
 	Input string `json:"input" yaml:"input"`
 }
 
+// Authorizer - To specify authorization method for the respective workflow
 type Authorizer struct {
 	Type   string `json:"type" yaml:"type"`
 	AKey   string `json:"key" yaml:"key"`
@@ -22,6 +25,7 @@ type Authorizer struct {
 	Secret string `json:"secret" yaml:"secret"`
 }
 
+// CORS - properties for the access control to workflow
 type CORS struct {
 	AllowOrigin  string `json:"allow-origin" yaml:"allow-origin" default:"*"`
 	AllowMethods string `json:"allow-methods" yaml:"allow-methods" default:"*"`

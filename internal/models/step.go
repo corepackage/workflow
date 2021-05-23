@@ -2,6 +2,7 @@ package models
 
 import "github.com/coredevelopment/workflow/internal/constants"
 
+// Step - It defines a single step
 type Step struct {
 	Name string             `json:"name" yaml:"name"`
 	ID   string             `json:"id" yaml:"id"`
@@ -18,12 +19,14 @@ type Step struct {
 	PostCondition string    `json:"post-condition" yaml:"post-condition"`
 }
 
+// logicStep - properties explicit to logic type step
 type logicStep struct {
 	Runtime constants.Runtime `json:"runtime" yaml:"runtime"`
 	ExePath string            `json:"exe-path" yaml:"exe-path"`
 	Handler string            `json:"handler" yaml:"handler"`
 }
 
+// APIStep - properties explicit to logic type step
 type APIStep struct {
 	Endpoint       string            `json:"endpoint" yaml:"endpoint"`
 	Method         string            `json:"method" yaml:"method"`
@@ -39,6 +42,7 @@ func (a *APIStep) Execute() {
 
 }
 
+// StepError - properties defined for step error
 type StepError struct {
 	Retry bool   `json:"retry" yaml:"retry"`
 	Goto  string `json:"goto" yaml:"goto"`
