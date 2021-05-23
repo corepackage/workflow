@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 // Execute - To execute the specified option
-func Execute() {
+func main() {
 
 	// Retrieving operation from args
 	if len(os.Args) <= 1 {

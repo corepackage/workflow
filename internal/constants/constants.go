@@ -26,3 +26,9 @@ const (
 	PUSH_CONFIG        = "push"
 	HELP               = "--help"
 )
+
+// To specify 32 byte encrypt-decrypt key
+const (
+	ENC_DEC_KEY  = "D*F-JaNdRgUkXp2s5v8y/B?E(H+KbPeS"
+	ENC_BASE_DIR = "./configs/enc-configs"
+)
