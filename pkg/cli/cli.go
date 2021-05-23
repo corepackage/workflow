@@ -3,9 +3,14 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
+	"path"
 
+	"github.com/coredevelopment/workflow/internal/constants"
 	"github.com/coredevelopment/workflow/internal/models"
+	"github.com/coredevelopment/workflow/pkg/cryptography"
+	fileops "github.com/coredevelopment/workflow/pkg/fileOps"
 	"github.com/coredevelopment/workflow/pkg/util"
 )
 
@@ -43,7 +48,16 @@ func PushConfig() {
 			}
 		}
 	}
-	fmt.Println(files)
+	// fmt.Println(files)
+
+	// Ranging over files and invoking encryption
+	for _, file := range files {
+		log.Println("Encrypting File: ", file)
+		cryptErr := cryptography.Encrypt(file, path.Join(constants.ENC_BASE_DIR, fileops.GetFileName(file)))
+		if cryptErr != nil {
+			log.Printf("Error while encrypting file %v : %v", file, cryptErr)
+		}
+	}
 }
 
 // ListAll - to list all the existing workflow configurations
