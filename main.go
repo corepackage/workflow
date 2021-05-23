@@ -1,7 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"github.com/coredevelopment/workflow/cmd"
+)
 
 func main() {
-	fmt.Println("Hello world")
+
+	// Starting the engine
+	cmd.Execute()
 }

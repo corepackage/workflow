@@ -1,5 +1,6 @@
 package constants
 
+// Constants to specify runtime
 type Runtime string
 
 const (
@@ -8,10 +9,20 @@ const (
 	JAVA_RUNTIME           = "java"
 )
 
+// To specify step types
 type StepType string
 
 const (
 	LOGIC_STEP StepType = "logic"
 	API_STEP            = "api"
 	GRPC_STEP           = "grpc"
+)
+
+// To specify CLI commands type
+
+const (
+	RUN_ENGINE  string = "run"
+	STOP_ENGINE        = "stop"
+	PUSH_CONFIG        = "push"
+	HELP               = "--help"
 )
