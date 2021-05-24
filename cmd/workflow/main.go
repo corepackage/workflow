@@ -14,7 +14,7 @@ func main() {
 
 	// Retrieving operation from args
 	if len(os.Args) <= 1 {
-		cli.ShowInfo()
+		cli.ShowHelp()
 		return
 	}
 	command := os.Args[1]
@@ -29,7 +29,7 @@ func main() {
 	case constants.PUSH_CONFIG:
 		cli.PushConfig()
 	case constants.HELP:
-		cli.ShowInfo()
+		cli.ShowHelp()
 	default:
 		fmt.Println("Invalid command :", command)
 	}

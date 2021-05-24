@@ -1,8 +1,8 @@
 package models
 
 type Config struct {
-	Port int
-	Host string
+	Port   int
+	Prefix string
 }
 
 var EngConfig Config
