@@ -11,6 +11,7 @@ import (
 	"github.com/coredevelopment/workflow/internal/models"
 	"github.com/coredevelopment/workflow/pkg/cryptography"
 	fileops "github.com/coredevelopment/workflow/pkg/fileOps"
+	"github.com/coredevelopment/workflow/pkg/server"
 	"github.com/coredevelopment/workflow/pkg/util"
 )
 
@@ -21,9 +22,16 @@ func RunEngine() {
 	runSet := flag.NewFlagSet("", flag.ExitOnError)
 	runSet.IntVar(&models.EngConfig.Port, "port", 7200, "Specific port to start the engine")
 	runSet.IntVar(&models.EngConfig.Port, "p", 7200, "Specific port to start the engine")
+	runSet.StringVar(&models.EngConfig.Prefix, "path", "", "Specific port to start the engine")
 	runSet.Parse(os.Args[2:])
 
-	fmt.Println("starting engine on", models.EngConfig.Port)
+	// TODO: Handler running in background
+	// Starting instances of workflow server
+	err := server.Start()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 // StopEngine - To stop the running instance of workflow engine
@@ -48,7 +56,6 @@ func PushConfig() {
 			}
 		}
 	}
-	// fmt.Println(files)
 
 	// Ranging over files and invoking encryption
 	for _, file := range files {
@@ -65,8 +72,8 @@ func ListAll() {}
 
 func Remove() {}
 
-func Purge() {}
+func RemoveAll() {}
 
-func ShowInfo() {
+func ShowHelp() {
 	fmt.Println("Showing options")
 }
