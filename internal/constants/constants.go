@@ -32,3 +32,6 @@ const (
 	ENC_DEC_KEY  = "D*F-JaNdRgUkXp2s5v8y/B?E(H+KbPeS"
 	ENC_BASE_DIR = "./configs/workflow-configs"
 )
+
+// PID file to store process id for the workflow engine
+const PIDFile = "/tmp/workflow.pid"
