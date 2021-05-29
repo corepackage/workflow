@@ -9,14 +9,14 @@ type Step struct {
 	Type constants.StepType `json:"type" yaml:"type"`
 	logicStep
 	APIStep
-	Async         bool      `json:"async" yaml:"async"`
-	Delay         string    `json:"delay" yaml:"delay"`
-	Timeout       string    `json:"timeout" yaml:"timeout"`
-	NextStep      string    `json:"next-step" yaml:"next-step"`
-	Break         bool      `json:"break" yaml:"break"`
-	Error         StepError `json:"on-error" yaml:"on-error"`
-	PreCondition  string    `json:"pre-condition" yaml:"pre-condition"`
-	PostCondition string    `json:"post-condition" yaml:"post-condition"`
+	Async         bool        `json:"async" yaml:"async"`
+	Delay         string      `json:"delay" yaml:"delay"`
+	Timeout       string      `json:"timeout" yaml:"timeout"`
+	NextStep      string      `json:"next-step" yaml:"next-step"`
+	Break         bool        `json:"break" yaml:"break"`
+	Error         StepError   `json:"on-error" yaml:"on-error"`
+	PreCondition  interface{} `json:"pre-condition" yaml:"pre-condition"`
+	PostCondition interface{} `json:"post-condition" yaml:"post-condition"`
 }
 
 // logicStep - properties explicit to logic type step
