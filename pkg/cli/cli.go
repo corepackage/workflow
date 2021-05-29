@@ -12,7 +12,8 @@ import (
 	"github.com/coredevelopment/workflow/internal/constants"
 	"github.com/coredevelopment/workflow/internal/models"
 	"github.com/coredevelopment/workflow/pkg/cryptography"
-	fileops "github.com/coredevelopment/workflow/pkg/fileOps"
+	"github.com/coredevelopment/workflow/pkg/db"
+	"github.com/coredevelopment/workflow/pkg/parser"
 	"github.com/coredevelopment/workflow/pkg/server"
 	"github.com/coredevelopment/workflow/pkg/util"
 )
@@ -51,8 +52,8 @@ func StopEngine() {
 
 	// TODO: Added user logs
 	fmt.Println("Stopping the engine")
-	if _, err := os.Stat(constants.PIDFile); err == nil {
-		data, err := ioutil.ReadFile(constants.PIDFile)
+	if _, err := os.Stat(constants.PID_FILE); err == nil {
+		data, err := ioutil.ReadFile(constants.PID_FILE)
 		if err != nil {
 			fmt.Println("Not running")
 			os.Exit(1)
@@ -60,7 +61,7 @@ func StopEngine() {
 		ProcessID, err := strconv.Atoi(string(data))
 
 		if err != nil {
-			fmt.Println("Unable to read and parse process id found in ", constants.PIDFile)
+			fmt.Println("Unable to read and parse process id found in ", constants.PID_FILE)
 			os.Exit(1)
 		}
 
@@ -71,7 +72,7 @@ func StopEngine() {
 			os.Exit(1)
 		}
 		// remove PID file
-		os.Remove(constants.PIDFile)
+		os.Remove(constants.PID_FILE)
 
 		fmt.Printf("Killing process ID [%v] now.\n", ProcessID)
 		// kill process and exit immediately
@@ -113,10 +114,32 @@ func PushConfig() {
 	// Ranging over files and invoking encryption
 	for _, file := range files {
 		log.Println("Encrypting File: ", file)
-		cryptErr := cryptography.Encrypt(file, path.Join(constants.ENC_BASE_DIR, fileops.GetFileName(file)))
+
+		// Get the respective data to store in db
+		workflowId, err := parser.GetWorkflowId(file)
+		if err != nil {
+			log.Printf("Workflow Id not found for file %s: %v\n", file, err)
+			continue
+		}
+		workflowName, err := parser.GetWorkflowName(file)
+		if err != nil {
+			log.Printf("Workflow Name not found for file %s: %v\n", file, err)
+			continue
+		}
+		version, err := parser.GetWorkflowVersion(file)
+		if err != nil {
+			log.Printf("Workflow Version not found taking \"latest\"\n")
+		}
+
+		// Encrypting data
+		cryptErr := cryptography.Encrypt(file, path.Join(constants.ENC_BASE_DIR, workflowId+"_"+version))
 		if cryptErr != nil {
 			log.Printf("Error while encrypting file %v : %v", file, cryptErr)
+			continue
 		}
+
+		// Updating database
+		db.InsertOrUpdateConfig(workflowId, workflowName, version)
 	}
 }
 

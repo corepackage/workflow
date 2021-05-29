@@ -34,4 +34,7 @@ const (
 )
 
 // PID file to store process id for the workflow engine
-const PIDFile = "/tmp/workflow.pid"
+const PID_FILE = "/tmp/workflow.pid"
+
+// Database file path
+const DB_PATH = "./configs/engine-configs/workflow.db"

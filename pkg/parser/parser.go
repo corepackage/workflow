@@ -1,4 +1,4 @@
-package main
+package parser
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ var t = models.Workflow{}
 
 func main() {
 
-	configFilePath := path.Join(FilePath, "configs/workflow_config.yml")
+	configFilePath := "/home/admino/Workspace/POCs/workflow_config.yml"
 	err := FileYamlUnmarshal(configFilePath)
 	if err != nil {
 		log.Fatalf("Aborting : %v", err)
@@ -62,6 +62,21 @@ func GetWorkflowId(filePath string) (string, error) {
 		return "", fmt.Errorf("Workflow Id is blank")
 	}
 	return t.ID, nil
+}
+
+// GetWorkflowVersion : To get the workflow version from the file specified
+func GetWorkflowVersion(filePath string) (string, error) {
+	// configFilePath := path.Join(FilePath, "configs/workflow_config.yml")
+	err := FileYamlUnmarshal(filePath)
+	if err != nil {
+		log.Fatalf("Aborting : %v", err)
+		return "", err
+	}
+	if t.Version == "" {
+		log.Printf("Aborting : %v", "Workflow version is blank")
+		t.Version = "latest"
+	}
+	return t.Version, nil
 }
 
 // GetWorkflowName : To get the workflow Name from the file specified

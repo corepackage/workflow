@@ -19,7 +19,6 @@ func main() {
 	}
 	command := os.Args[1]
 	command = strings.ToLower(command)
-
 	// Checking the execution command
 	switch command {
 	case constants.RUN_ENGINE:
