@@ -19,7 +19,7 @@ import (
 
 // Saving PId
 func savePid(pid int) {
-	file, err := os.Create(constants.PIDFile)
+	file, err := os.Create(constants.PID_FILE)
 	if err != nil {
 		log.Printf("savePid : Unable to create a pid file : %v\n", err)
 		os.Exit(1)
@@ -50,7 +50,7 @@ func Start() error {
 		fmt.Println("Received signal type : ", signalType)
 
 		// Remove PID
-		os.Remove(constants.PIDFile)
+		os.Remove(constants.PID_FILE)
 		os.Exit(0)
 	}()
 	port := models.EngConfig.Port
@@ -69,7 +69,7 @@ func Start() error {
 }
 
 func StartInBackground() {
-	if _, err := os.Stat(constants.PIDFile); err == nil {
+	if _, err := os.Stat(constants.PID_FILE); err == nil {
 		fmt.Println("Already running or /tmp/daemonize.pid file exists")
 		os.Exit(1)
 	}
