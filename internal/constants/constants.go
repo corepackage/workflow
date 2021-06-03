@@ -21,10 +21,23 @@ const (
 // To specify CLI commands type
 
 const (
-	RUN_ENGINE  string = "run"
-	STOP_ENGINE        = "stop"
-	PUSH_CONFIG        = "push"
-	HELP               = "--help"
+	RUN_ENGINE       string = "run"
+	STOP_ENGINE             = "stop"
+	PUSH_CONFIG             = "push"
+	LIST_ALL_CONFIGS        = "list"
+	REMOVE                  = "rm"
+)
+
+// To specify various flags
+const (
+	HELP         string = "--help"
+	ALL                 = "all"
+	ALL_SHORT           = "a"
+	PORT                = "port"
+	PORT_SHORT          = "p"
+	PATH                = "path"
+	DETACH              = "detach"
+	DETACH_SHORT        = "d"
 )
 
 // To specify 32 byte encrypt-decrypt key

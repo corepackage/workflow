@@ -8,38 +8,38 @@ import (
 	"io"
 
 	"github.com/coredevelopment/workflow/internal/constants"
-	fileops "github.com/coredevelopment/workflow/pkg/fileOps"
+	fileops "github.com/coredevelopment/workflow/pkg/fileops"
 )
 
 // Decrypt : To decrypt an encrypted file from a specified
-func Decrypt(file string) (string, error) {
+func Decrypt(file string) ([]byte, error) {
 	// Invoke file read function
 	ciphertext, readErr := fileops.ReadFromFile(file)
 	if readErr != nil {
-		return "", fmt.Errorf("Error while reading: %v", readErr)
+		return nil, fmt.Errorf("Error while reading: %v", readErr)
 	}
 
 	c, err := aes.NewCipher([]byte(constants.ENC_DEC_KEY))
 	if err != nil {
-		return "", fmt.Errorf("Error while generating cipher instance: %v", err)
+		return nil, fmt.Errorf("Error while generating cipher instance: %v", err)
 	}
 
 	gcm, err := cipher.NewGCM(c)
 	if err != nil {
-		return "", fmt.Errorf("Error in GCM: %v", err)
+		return nil, fmt.Errorf("Error in GCM: %v", err)
 	}
 
 	nonceSize := gcm.NonceSize()
 	if len(ciphertext) < nonceSize {
-		return "", fmt.Errorf("Error in Nonce: %v", err)
+		return nil, fmt.Errorf("Error in Nonce: %v", err)
 	}
 
 	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
 	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return "", fmt.Errorf("Error in GCM Open: %v", err)
+		return nil, fmt.Errorf("Error in GCM Open: %v", err)
 	}
-	return string(plaintext), nil
+	return plaintext, nil
 }
 
 // Encrypt : To encrypt file and store in a path

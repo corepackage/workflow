@@ -27,6 +27,10 @@ func main() {
 		cli.StopEngine()
 	case constants.PUSH_CONFIG:
 		cli.PushConfig()
+	case constants.LIST_ALL_CONFIGS:
+		cli.ListAll()
+	case constants.REMOVE:
+		cli.Remove()
 	case constants.HELP:
 		cli.ShowHelp()
 	default:
