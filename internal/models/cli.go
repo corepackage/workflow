@@ -6,4 +6,6 @@ type WorkflowConfig struct {
 	Version      string
 	CreatedAt    string
 	UpdatedAt    string
+	FileExt      string
+	Active       bool
 }

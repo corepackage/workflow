@@ -2,6 +2,7 @@ package db
 
 import (
 	"log"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -19,6 +20,7 @@ type workflowConfig struct {
 	Version      string
 	Deleted      bool
 	Active       bool
+	FileExt      string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 	DeletedAt    gorm.DeletedAt
@@ -46,13 +48,13 @@ var (
 
 // getInstance : to create single instance of the database
 func getInstance() *gorm.DB {
-	dbPath := constants.DB_PATH
+	dbPath := filepath.FromSlash(constants.DB_PATH)
 	// dbPath := "../../configs/engine-configs/workflow.db"
 	if dbInstance == nil {
 		once.Do(
 			func() {
 				var err error
-				log.Println("Creating Single Instance Now")
+				// log.Println("Creating Single Instance Now")
 				dbInstance, err = gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 
 				// Creating DB schemas
@@ -71,6 +73,17 @@ func getSingleConfig(workflowId, version string) workflowConfig {
 	db := getInstance()
 	var config workflowConfig
 	result := db.Where("workflow_id = ? AND version = ? AND deleted = ?", workflowId, version, false).Find(&config)
+	if result.Error != nil {
+		log.Println("Error getting data :", result.Error)
+	}
+	return config
+}
+
+// getActiveConfig : to get active workflow config
+func getActiveConfig(workflowId string) workflowConfig {
+	db := getInstance()
+	var config workflowConfig
+	result := db.Where("workflow_id = ? AND deleted = ?", workflowId, false).Find(&config)
 	if result.Error != nil {
 		log.Println("Error getting data :", result.Error)
 	}
@@ -100,15 +113,15 @@ func getActiveConfigs() []workflowConfig {
 }
 
 // insertConfig : to insert a new config in database
-func insertConfig(workflowId, workflowName, version string) error {
+func insertConfig(workflowId, workflowName, version, extension string) error {
 	db := getInstance()
-	newConfig := workflowConfig{WorkflowID: workflowId, WorkflowName: workflowName, Version: version, CreatedAt: time.Now(), Deleted: false, Active: true}
+	newConfig := workflowConfig{WorkflowID: workflowId, WorkflowName: workflowName, Version: version, CreatedAt: time.Now(), Deleted: false, Active: true, FileExt: extension}
 	result := db.Create(&newConfig)
 	return result.Error
 }
 
 // updateConfig : to update the config
-func updateConfig(workflowId, workflowName, version string) error {
+func updateConfig(workflowId, workflowName, version, extension string) error {
 	db := getInstance()
 
 	result := db.Where("workflow_id = ? AND version = ? AND deleted = ?", workflowId, version, false).Updates(workflowConfig{WorkflowName: workflowName})
@@ -119,13 +132,13 @@ func updateConfig(workflowId, workflowName, version string) error {
 func updateActiveStatus(workflowId, version string, active bool) error {
 	db := getInstance()
 
-	result := db.Table("workflow_configs").Where("workflow_id = ? AND version = ? AND deleted = ?", workflowId, version, false).Update("active", active)
+	result := db.Table("workflow_configs").Where("( workflow_id = ? OR workflow_name = ? ) AND version = ? AND deleted = ?", workflowId, workflowId, version, false).Update("active", active)
 	return result.Error
 }
 
 // deleteConfig : to update delete flag
 func deleteConfig(workflowId, version string) error {
 	db := getInstance()
-	result := db.Where("workflow_id = ? AND version = ?", workflowId, version).Updates(workflowConfig{Deleted: true})
+	result := db.Where("( workflow_id = ? OR workflow_name = ? ) AND version = ?", workflowId, workflowId, version).Updates(workflowConfig{Deleted: true})
 	return result.Error
 }
