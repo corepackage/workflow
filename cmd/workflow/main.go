@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -10,16 +10,15 @@ import (
 )
 
 // Execute - To execute the specified option
-func Execute() {
+func main() {
 
 	// Retrieving operation from args
 	if len(os.Args) <= 1 {
-		cli.ShowInfo()
+		cli.ShowHelp()
 		return
 	}
 	command := os.Args[1]
 	command = strings.ToLower(command)
-
 	// Checking the execution command
 	switch command {
 	case constants.RUN_ENGINE:
@@ -28,8 +27,12 @@ func Execute() {
 		cli.StopEngine()
 	case constants.PUSH_CONFIG:
 		cli.PushConfig()
+	case constants.LIST_ALL_CONFIGS:
+		cli.ListAll()
+	case constants.REMOVE:
+		cli.Remove()
 	case constants.HELP:
-		cli.ShowInfo()
+		cli.ShowHelp()
 	default:
 		fmt.Println("Invalid command :", command)
 	}

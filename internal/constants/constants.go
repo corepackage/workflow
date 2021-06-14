@@ -21,8 +21,33 @@ const (
 // To specify CLI commands type
 
 const (
-	RUN_ENGINE  string = "run"
-	STOP_ENGINE        = "stop"
-	PUSH_CONFIG        = "push"
-	HELP               = "--help"
+	RUN_ENGINE       string = "run"
+	STOP_ENGINE             = "stop"
+	PUSH_CONFIG             = "push"
+	LIST_ALL_CONFIGS        = "list"
+	REMOVE                  = "rm"
 )
+
+// To specify various flags
+const (
+	HELP         string = "--help"
+	ALL                 = "all"
+	ALL_SHORT           = "a"
+	PORT                = "port"
+	PORT_SHORT          = "p"
+	PATH                = "path"
+	DETACH              = "detach"
+	DETACH_SHORT        = "d"
+)
+
+// To specify 32 byte encrypt-decrypt key
+const (
+	ENC_DEC_KEY  = "D*F-JaNdRgUkXp2s5v8y/B?E(H+KbPeS"
+	ENC_BASE_DIR = "./configs/workflow-configs"
+)
+
+// PID file to store process id for the workflow engine
+const PID_FILE = "/tmp/workflow.pid"
+
+// Database file path
+const DB_PATH = "./configs/engine-configs/workflow.db"

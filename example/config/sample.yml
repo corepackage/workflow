@@ -1,0 +1,52 @@
+name: 'Sample Workflow'
+id: 'Sample ID'
+primary-key:
+  - key: 'key1'
+    input: 'Header'
+  - key: 'key2'
+    input: 'body.ID'
+authorizer:
+  type: jwt
+  key: Authorization
+  input: Header
+  secret: 'Ssh!! My Secret'
+
+cors:
+  allow-origin: '*'
+  allow-method: '*'
+
+steps:
+  - id: step1
+    name: 'my first step'
+    type: logic
+    runtime: 'python'
+    exe-path: '/tmp/path'
+    handler: main
+    async: true
+    delay: 500ms
+    timeout: 15ms
+    next-step: 'step2'
+    pre-condition:
+      - if:
+        when: 'abcd == efgh'
+        then:
+          goto: step3
+      - else-if:
+      - else:
+    post-condition:
+    break: true
+    error:
+      retry: true
+      goto:
+
+  - id: step2
+    type: api
+    endpoint: 'https://myendpoint.abcd.com/api'
+    method: GET
+    payload: $$body.json
+    include-headers: true
+    custom-headers:
+      api-key: 10
+    async: true
+    delay: 500ms
+    timeout: 15ms
