@@ -14,7 +14,7 @@ type Step struct {
 	Timeout       string      `json:"timeout" yaml:"timeout"`
 	NextStep      string      `json:"next-step" yaml:"next-step"`
 	Break         bool        `json:"break" yaml:"break"`
-	Error         StepError   `json:"on-error" yaml:"on-error"`
+	Error         *StepError  `json:"on-error" yaml:"on-error"`
 	PreCondition  interface{} `json:"pre-condition" yaml:"pre-condition"`
 	PostCondition interface{} `json:"post-condition" yaml:"post-condition"`
 }

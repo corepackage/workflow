@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 	"strings"
@@ -16,7 +15,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	workflowID := vars["workflowId"]
 
 	// Checking workflow status
-	config, err := engine.Init(workflowID)
+	config, err := engine.GetWorkflowConfig(workflowID)
 	if err != nil {
 		log.Println("Error initializing workflow")
 
@@ -31,25 +30,9 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Marshalling user data to interface
-	userData := make(map[string]interface{})
-	decoder := json.NewDecoder(r.Body)
-	err = decoder.Decode(&userData)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-	headers := (map[string][]string)(r.Header)
 	// Executing engine
-	resp, err := engine.Execute(config, headers, userData)
-	if err != nil {
-		log.Println("Error executing workflow")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(resp))
+	engine.Init(r, w, config)
+
 }
 
 func ServerStatusHandler(w http.ResponseWriter, r *http.Request) {
