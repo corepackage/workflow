@@ -4,8 +4,8 @@ import "github.com/coredevelopment/workflow/internal/constants"
 
 // Step - It defines a single step
 type Step struct {
-	logicStep
-	APIStep
+	logicStep     `yaml:",inline"`
+	APIStep       `yaml:",inline"`
 	Name          string             `json:"name" yaml:"name"`
 	ID            string             `json:"id" yaml:"id"`
 	Type          constants.StepType `json:"type" yaml:"type"`
