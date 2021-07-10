@@ -1,0 +1,24 @@
+# github.com/gorilla/mux v1.8.0
+## explicit
+github.com/gorilla/mux
+# github.com/jinzhu/inflection v1.0.0
+github.com/jinzhu/inflection
+# github.com/jinzhu/now v1.1.2
+github.com/jinzhu/now
+# github.com/mattn/go-sqlite3 v1.14.5
+github.com/mattn/go-sqlite3
+# gopkg.in/yaml.v2 v2.4.0
+## explicit
+gopkg.in/yaml.v2
+# gorm.io/driver/sqlite v1.1.4
+## explicit
+gorm.io/driver/sqlite
+# gorm.io/gorm v1.21.11
+## explicit
+gorm.io/gorm
+gorm.io/gorm/callbacks
+gorm.io/gorm/clause
+gorm.io/gorm/logger
+gorm.io/gorm/migrator
+gorm.io/gorm/schema
+gorm.io/gorm/utils

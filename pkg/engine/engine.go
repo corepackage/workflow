@@ -72,7 +72,7 @@ func Init(r *http.Request, w http.ResponseWriter, wf *models.Workflow) {
 		w.Write([]byte("Request Not Valid"))
 		return
 	}
-	fmt.Printf("Description: %#v\n", wf.Steps[1])
+	fmt.Printf("Description: %#v\n", wf.Steps)
 	//TODO: Load the respective instance or create new instance
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Workflow executed successfully"))
