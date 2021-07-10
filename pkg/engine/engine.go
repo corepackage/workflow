@@ -1,8 +1,8 @@
 package engine
 
 import (
-	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"path"
@@ -55,22 +55,15 @@ func GetWorkflowConfig(workflowID string) (*models.Workflow, error) {
 
 // Init : Starting point of workflow engine
 func Init(r *http.Request, w http.ResponseWriter, wf *models.Workflow) {
-	// Marshalling user data to interface
-	userData := make(map[string]interface{})
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&userData)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Unable to parse user data"))
-		return
-	}
+
 	// headers := (map[string][]string)(r.Header)
-	err = cors.Validate(r, w, wf.CORS)
+	err := cors.Validate(r, w, wf.CORS)
 	if err != nil {
 		log.Println("Error in CORS Policy")
 		w.Write([]byte("Error in CORS Policy"))
 		return
 	}
+
 	//TODO: Validate request if authorizer present
 	err = auth.Validate(r, wf.Authorizer)
 	if err != nil {
@@ -79,6 +72,7 @@ func Init(r *http.Request, w http.ResponseWriter, wf *models.Workflow) {
 		w.Write([]byte("Request Not Valid"))
 		return
 	}
+	fmt.Printf("Description: %#v\n", wf.Steps[1])
 	//TODO: Load the respective instance or create new instance
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Workflow executed successfully"))

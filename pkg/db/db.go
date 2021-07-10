@@ -2,6 +2,8 @@ package db
 
 import (
 	"log"
+	"os"
+	"path"
 	"path/filepath"
 	"sync"
 	"time"
@@ -49,6 +51,15 @@ var (
 // getInstance : to create single instance of the database
 func getInstance() *gorm.DB {
 	dbPath := filepath.FromSlash(constants.DB_PATH)
+
+	dir := path.Dir(dbPath)
+
+	// Creating folders if not exists
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			log.Fatal("Unable to open database")
+		}
+	}
 	// dbPath := "../../configs/engine-configs/workflow.db"
 	if dbInstance == nil {
 		once.Do(

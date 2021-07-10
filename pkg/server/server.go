@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/coredevelopment/workflow/internal/constants"
 	"github.com/coredevelopment/workflow/internal/models"
@@ -43,33 +45,40 @@ func savePid(pid int) {
 // Start - to start the new mux server
 func Start() error {
 
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, os.Interrupt, os.Kill, syscall.SIGTERM)
-	pidFile := filepath.FromSlash(constants.PID_FILE)
-
-	go func() {
-		signalType := <-ch
-		signal.Stop(ch)
-		fmt.Println("Exit command received, Exiting...")
-
-		fmt.Println("Received signal type : ", signalType)
-
-		// Remove PID
-		os.Remove(pidFile)
-		os.Exit(0)
-	}()
 	port := models.EngConfig.Port
 	log.Println("starting engine on ", port)
+	pidFile := filepath.FromSlash(constants.PID_FILE)
 
 	r := mux.NewRouter()
 
 	router.InitRoutes(r)
 	// Converting port to string
 	stringPort := strconv.Itoa(port)
+	ch := make(chan os.Signal, 1)
 
-	if err := http.ListenAndServe(":"+stringPort, r); err != nil {
-		fmt.Println("Error starting workflow engine")
+	signal.Notify(ch, os.Interrupt, os.Kill, syscall.SIGTERM)
+
+	s := &http.Server{
+		Addr:    ":" + stringPort,
+		Handler: r,
 	}
+	go func() {
+		if err := s.ListenAndServe(); err != nil {
+			log.Fatal(err)
+		}
+
+	}()
+
+	signalType := <-ch
+	fmt.Println("Exit command received, Exiting...")
+	fmt.Println("Received signal type : ", signalType)
+
+	// Gracefully shutting down server
+	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	s.Shutdown(tc)
+	// Remove PID
+	os.Remove(pidFile)
+	os.Exit(0)
 	return nil
 }
 

@@ -1,5 +1,5 @@
-name: 'Sample Workflow'
-id: 'Sample ID'
+name: 'Sample Workflow1'
+id: 'SampleID2'
 primary-key:
   - key: 'key1'
     input: 'Header'

@@ -13,7 +13,9 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	// w.Write([]byte("Invoking " + vars["workflowId"]))
 	workflowID := vars["workflowId"]
-
+	if workflowID == "" {
+		return
+	}
 	// Checking workflow status
 	config, err := engine.GetWorkflowConfig(workflowID)
 	if err != nil {

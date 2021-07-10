@@ -102,7 +102,7 @@ func GetWorkflowName(filePath, ext string) (string, error) {
 	// configFilePath := path.Join(FilePath, "configs/workflow_config.yml")
 	filedata, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Fatalf("err1or: %v", err)
+		log.Fatalf("error: %v", err)
 		return "", err
 	}
 	// Checking file extension
