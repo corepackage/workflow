@@ -1,4 +1,4 @@
-module github.com/coredevelopment/workflow
+module github.com/corepackage/workflow
 
 go 1.16
 
