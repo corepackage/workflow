@@ -8,10 +8,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/coredevelopment/workflow/internal/constants"
+	"github.com/corepackage/workflow/internal/constants"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
+
+type WorkflowConfig struct {
+	WorkflowID   string
+	WorkflowName string
+	Version      string
+	CreatedAt    string
+	UpdatedAt    string
+	FileExt      string
+	Active       bool
+}
 
 // Here are the internal methods listed to perform db operations
 // Workflow Config schema to store in db
@@ -32,21 +42,6 @@ var (
 	dbInstance *gorm.DB
 	once       sync.Once
 )
-
-// func main() {
-// 	InsertOrUpdateConfig("wf1", "workflow_1", "v2")
-// 	InsertOrUpdateConfig("wf1", "workflow_1", "v1")
-// 	InsertOrUpdateConfig("wf2", "workflow_2", "v1")
-// 	InsertOrUpdateConfig("wf1", "workflow_updated", "v2")
-// 	fmt.Println("----------------------------------------------------------------")
-// 	fmt.Println(getSingleConfig("wf1", "v2"))
-// 	fmt.Println("----------------------------------------------------------------")
-// 	fmt.Println(getAllConfigs())
-// 	fmt.Println(updateActiveStatus("wf1", "v1", false))
-// 	fmt.Println("----------------------------------------------------------------")
-// 	fmt.Println(getActiveConfigs())
-// 	// deleteConfig("wf1", "v2")
-// }
 
 // getInstance : to create single instance of the database
 func getInstance() *gorm.DB {

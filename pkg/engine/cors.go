@@ -1,4 +1,4 @@
-package cors
+package engine
 
 import (
 	"errors"
@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/coredevelopment/workflow/pkg/util"
+	"github.com/corepackage/workflow/pkg/util"
 )
 
-// Validate : to validate the cors policy for the workflow
-func Validate(r *http.Request, w http.ResponseWriter, cors map[string]interface{}) error {
+// CORSValidate : to validate the cors policy for the workflow
+func CORSValidate(r *http.Request, w http.ResponseWriter, cors map[string]interface{}) error {
 
 	// Setting origin
 	w.Header().Set("Access-Control-Allow-Origin", getOrigins(cors["allow-origin"]))
@@ -21,7 +21,7 @@ func Validate(r *http.Request, w http.ResponseWriter, cors map[string]interface{
 	if methods != "*" {
 		if !strings.Contains(methods, r.Method) {
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			return errors.New("Method not allowed")
+			return errors.New("method not allowed")
 		}
 	}
 	return nil

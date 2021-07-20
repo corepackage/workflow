@@ -15,9 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/server/router"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/engine"
+	"github.com/corepackage/workflow/pkg/server/middleware"
+	"github.com/corepackage/workflow/pkg/server/router"
 
 	"github.com/gorilla/mux"
 )
@@ -45,12 +46,12 @@ func savePid(pid int) {
 // Start - to start the new mux server
 func Start() error {
 
-	port := models.EngConfig.Port
+	port := engine.GetEngConfig().Port
 	log.Println("starting engine on ", port)
 	pidFile := filepath.FromSlash(constants.PID_FILE)
 
 	r := mux.NewRouter()
-
+	r.Use(middleware.Middleware)
 	router.InitRoutes(r)
 	// Converting port to string
 	stringPort := strconv.Itoa(port)
@@ -90,9 +91,9 @@ func StartInBackground() {
 		fmt.Println("Already running or /tmp/daemonize.pid file exists")
 		os.Exit(1)
 	}
-	port := strconv.Itoa(models.EngConfig.Port)
+	port := strconv.Itoa(engine.GetEngConfig().Port)
 
-	cmd := exec.Command(os.Args[0], constants.RUN_ENGINE, "--port="+port, "--path="+models.EngConfig.Prefix)
+	cmd := exec.Command(os.Args[0], constants.RUN_ENGINE, "--port="+port, "--path="+engine.GetEngConfig().Prefix)
 	cmd.Start()
 	// fmt.Println("Daemon process ID is :", cmd.Process.Pid)
 	savePid(cmd.Process.Pid)

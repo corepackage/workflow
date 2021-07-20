@@ -1,4 +1,4 @@
-package auth
+package engine
 
 import (
 	"errors"
@@ -6,12 +6,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/util"
+	"github.com/corepackage/workflow/pkg/util"
 )
 
-// Validate : to validate incoming request
-func Validate(r *http.Request, auth *models.Authorizer) error {
+// AuthValidate : to validate incoming request
+func AuthValidate(r *http.Request, auth *Authorizer) error {
 	if auth == nil {
 		log.Println("No authorizer found, continuing")
 		return nil
@@ -31,7 +30,7 @@ func Validate(r *http.Request, auth *models.Authorizer) error {
 		var ok bool
 		requestToken, ok = userData[auth.AKey].(string)
 		if !ok {
-			return errors.New("Error parsing auth key")
+			return errors.New("error parsing auth key")
 		}
 
 	}
@@ -39,7 +38,7 @@ func Validate(r *http.Request, auth *models.Authorizer) error {
 	// Invoking user's authorizer
 	success, err := invokeAuthorizer(requestToken)
 	if !success && err != nil {
-		return errors.New("Authorization failed")
+		return errors.New("authorization failed")
 	} else if err != nil {
 		log.Println("Validate : error invoking user authorizer")
 		return err

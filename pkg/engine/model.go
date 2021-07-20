@@ -1,4 +1,8 @@
-package models
+package engine
+
+import (
+	"github.com/corepackage/workflow/internal/constants"
+)
 
 // Workflow - Structure of workflow configuration
 type Workflow struct {
@@ -32,4 +36,29 @@ type CORS struct {
 	AllowMethods string `json:"allow-methods" yaml:"allow-methods" default:"*"`
 	AllowHeaders string `json:"allow-headers" yaml:"allow-headers" default:"*"`
 	MaxAge       int64  `json:"maxage" yaml:"maxage"`
+}
+
+// Step - It defines a single step
+type Step struct {
+	LogicStep     `yaml:",inline"`
+	APIStep       `yaml:",inline"`
+	Name          string             `json:"name" yaml:"name"`
+	ID            string             `json:"id" yaml:"id"`
+	Type          constants.StepType `json:"type" yaml:"type"`
+	Async         bool               `json:"async" yaml:"async"`
+	Authorize     bool               `json:"authorize" yaml:"authorize"`
+	Delay         string             `json:"delay" yaml:"delay"`
+	Timeout       string             `json:"timeout" yaml:"timeout"`
+	NextStep      string             `json:"next-step" yaml:"next-step"`
+	Users         []string           `json:"users" yaml:"users"`
+	Break         bool               `json:"break" yaml:"break"`
+	Error         *StepError         `json:"on-error" yaml:"on-error"`
+	PreCondition  interface{}        `json:"pre-condition" yaml:"pre-condition"`
+	PostCondition interface{}        `json:"post-condition" yaml:"post-condition"`
+}
+
+// StepError - properties defined for step error
+type StepError struct {
+	Retry bool   `json:"retry" yaml:"retry"`
+	Goto  string `json:"goto" yaml:"goto"`
 }

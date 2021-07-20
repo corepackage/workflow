@@ -5,8 +5,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	"github.com/coredevelopment/workflow/pkg/cli"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/cli"
 )
 
 // Execute - To execute the specified option
