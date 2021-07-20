@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/cryptography"
-	"github.com/coredevelopment/workflow/pkg/db"
-	"github.com/coredevelopment/workflow/pkg/parser"
-	"github.com/coredevelopment/workflow/pkg/server"
-	"github.com/coredevelopment/workflow/pkg/util"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/cryptography"
+	"github.com/corepackage/workflow/pkg/db"
+	"github.com/corepackage/workflow/pkg/engine"
+	"github.com/corepackage/workflow/pkg/parser"
+	"github.com/corepackage/workflow/pkg/server"
+	"github.com/corepackage/workflow/pkg/util"
 )
 
 // RunEngine - To start the workflow engine
@@ -23,17 +23,19 @@ func RunEngine() {
 
 	// Getting flags respective to run command
 	runSet := flag.NewFlagSet("", flag.ExitOnError)
-	runSet.IntVar(&models.EngConfig.Port, constants.PORT, 7200, "Specific port to start the engine")
-	runSet.IntVar(&models.EngConfig.Port, constants.PORT_SHORT, 7200, "Specific port to start the engine")
-	runSet.StringVar(&models.EngConfig.Prefix, constants.PATH, "", "Specific port to start the engine")
+	var port int
+	var prefix string
+	runSet.IntVar(&port, constants.PORT, 7200, "Specific port to start the engine")
+	runSet.IntVar(&port, constants.PORT_SHORT, 7200, "Specific port to start the engine")
+	runSet.StringVar(&prefix, constants.PATH, "", "Specific port to start the engine")
 
+	engine.SetConfig(port, prefix)
 	// Check to see if run in detach mode
 	var isDetached bool
 	runSet.BoolVar(&isDetached, constants.DETACH, false, "Specific port to start the engine")
 	runSet.BoolVar(&isDetached, constants.DETACH_SHORT, false, "Specific port to start the engine")
 	runSet.Parse(os.Args[2:])
 
-	// TODO: Handler running in background
 	// Starting instances of workflow server
 	var err error
 	if isDetached {
@@ -146,7 +148,7 @@ func ListAll() {
 	runSet.Parse(os.Args[2:])
 
 	// Showing only active configs
-	var configs []models.WorkflowConfig
+	var configs []db.WorkflowConfig
 	if !showActive {
 		configs = db.GetActiveConfigs()
 	} else {

@@ -2,8 +2,6 @@ package db
 
 import (
 	"log"
-
-	"github.com/coredevelopment/workflow/internal/models"
 )
 
 // InsertOrUpdateConfig : To insert or update config in database
@@ -24,41 +22,41 @@ func InsertOrUpdateConfig(workflowId, workflowName, version, extension string) e
 }
 
 // GetAllConfig : to get all configs
-func GetAllConfig() []models.WorkflowConfig {
+func GetAllConfig() []WorkflowConfig {
 	configs := getAllConfigs()
-	result := make([]models.WorkflowConfig, 0)
+	result := make([]WorkflowConfig, 0)
 
 	for _, c := range configs {
-		result = append(result, models.WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()})
+		result = append(result, WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()})
 	}
 	return result
 }
 
 // GetActiveConfigs : to get all configs
-func GetActiveConfigs() []models.WorkflowConfig {
+func GetActiveConfigs() []WorkflowConfig {
 	configs := getActiveConfigs()
-	result := make([]models.WorkflowConfig, 0)
+	result := make([]WorkflowConfig, 0)
 
 	for _, c := range configs {
-		result = append(result, models.WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()})
+		result = append(result, WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()})
 	}
 	return result
 }
 
 // GetSingelConfig : to get all configs
-func GetSingelConfig(workflowID, version string) models.WorkflowConfig {
+func GetSingelConfig(workflowID, version string) WorkflowConfig {
 	c := getSingleConfig(workflowID, version)
 
-	result := models.WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()}
+	result := WorkflowConfig{WorkflowName: c.WorkflowName, WorkflowID: c.WorkflowID, Version: c.Version, CreatedAt: c.CreatedAt.Local().String(), UpdatedAt: c.UpdatedAt.Local().String()}
 
 	return result
 }
 
 // GetActiveConfig : to get active config of the workflow
-func GetActiveConfig(workflowID string) models.WorkflowConfig {
+func GetActiveConfig(workflowID string) WorkflowConfig {
 	c := getActiveConfig(workflowID)
 
-	result := models.WorkflowConfig{WorkflowID: c.WorkflowID, Version: c.Version, Active: c.Active, FileExt: c.FileExt}
+	result := WorkflowConfig{WorkflowID: c.WorkflowID, Version: c.Version, Active: c.Active, FileExt: c.FileExt}
 
 	return result
 }

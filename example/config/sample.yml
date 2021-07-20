@@ -1,10 +1,8 @@
 name: 'Sample Workflow1'
-id: 'SampleID2'
+id: 'wf1'
 primary-key:
-  - key: 'key1'
-    input: 'Header'
   - key: 'key2'
-    input: 'body.ID'
+    input: '$$body.ID'
 authorizer:
   type: jwt
   key: Authorization
@@ -17,6 +15,20 @@ cors:
 
 steps:
   - id: step1
+    type: api
+    authorize: true
+    endpoint: 'http://api.plos.org/search?q=title:$$body.title'
+    method: GET
+    payload: $$body
+    include-headers: true
+    custom-headers:
+      api-key: 10
+    async: true
+    delay: 500ms
+    break: true
+    timeout: 15ms
+
+  - id: step2
     name: 'my first step'
     type: logic
     runtime: 'python'
@@ -38,15 +50,3 @@ steps:
     error:
       retry: true
       goto:
-
-  - id: step2
-    type: api
-    endpoint: 'https://myendpoint.abcd.com/api'
-    method: GET
-    payload: $$body.json
-    include-headers: true
-    custom-headers:
-      api-key: 10
-    async: true
-    delay: 500ms
-    timeout: 15ms

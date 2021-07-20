@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -8,13 +9,21 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/coredevelopment/workflow/internal/models"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/cryptography"
+	"github.com/corepackage/workflow/pkg/db"
+	"github.com/corepackage/workflow/pkg/engine"
 	"gopkg.in/yaml.v2"
 )
 
 var FilePath = RootDir()
 
-var t = models.Workflow{}
+var t = engine.Workflow{}
+
+var (
+	errInvalidID  = errors.New("GetWorkflowConfig : invalid workflow Id")
+	errInactiveWF = errors.New("Workflow is inactive")
+)
 
 // func main() {
 
@@ -47,6 +56,42 @@ func RootDir() string {
 	_, b, _, _ := runtime.Caller(0)
 	d := path.Join(path.Dir(b), "../")
 	return filepath.Dir(d)
+}
+
+// GetWorkflowConfig : to check status of workflow
+func GetWorkflowConfig(workflowID string) (*engine.Workflow, error) {
+	config := db.GetActiveConfig(workflowID)
+
+	// Checking workflow id
+	if config.WorkflowID == "" {
+		log.Println("GetWorkflowConfig : Workflow id is invalid")
+		return nil, errInvalidID
+	}
+
+	// Checking workflow status
+	if !config.Active {
+		log.Println("GetWorkflowConfig : Workflow is inactive")
+		return nil, errInactiveWF
+	}
+
+	// Decrypting configuration
+	filename := config.WorkflowID + "_" + config.Version
+	filePath := path.Join(filepath.FromSlash(constants.ENC_BASE_DIR), filename)
+	byteData, err := cryptography.Decrypt(filePath)
+	if err != nil {
+		log.Println("GetWorkflowConfig : Error decrypting configuration", err)
+		return nil, errors.New("GetWorkflowConfig : Error decrypting config")
+	}
+	var wf *engine.Workflow
+	// Parsing config
+	if config.FileExt == ".yml" || config.FileExt == ".yaml" {
+		wf, err = FileYamlUnmarshal(byteData)
+		if err != nil {
+			log.Println("GetWorkflowConfig : Error parsing config")
+			return nil, errors.New("GetWorkflowConfig : Error parsing config")
+		}
+	}
+	return wf, nil
 }
 
 // GetWorkflowId : To get the workflow Id from the file specified
@@ -121,7 +166,7 @@ func GetWorkflowName(filePath, ext string) (string, error) {
 }
 
 // FileYamlUnmarshal : To unmarshal the YAML file to the Struct workflow
-func FileYamlUnmarshal(data []byte) (*models.Workflow, error) {
+func FileYamlUnmarshal(data []byte) (*engine.Workflow, error) {
 
 	// NOTE: modified by akshatm
 	// fmt.Println(configFilePath)
