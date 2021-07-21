@@ -3,12 +3,15 @@ package engine
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/util"
 )
 
 // LogicStep - properties explicit to logic type step
@@ -38,17 +41,17 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 	// Making http request for get
 	if api.Method == http.MethodGet {
 
-		// Replacing query params
-		if strings.Contains(endpoint, "$$queryParams") {
-			for k, v := range queryParams {
-				endpoint = strings.Replace(endpoint, "$$queryParams."+k, v[0], -1)
-			}
+		resp, err := mapParams(queryParams, api.Endpoint)
+		if err != nil {
+			log.Println("API Execute : error mapping params ", err)
+			return nil, errors.New("invalid expression for query params in endpoint")
 		}
-		if strings.Contains(endpoint, "$$queryParams") {
-			log.Println("API Execute error, query param not provided")
-			return nil, errors.New("query param not provided")
+		var ok bool
+		endpoint, ok = resp.(string)
+		if !ok {
+			log.Println("expected string after mapping")
+			return nil, errors.New("API Execute : unexpected error")
 		}
-
 		if strings.Contains(endpoint, "$$body") {
 			for k, v := range body {
 				str, ok := v.(string)
@@ -103,4 +106,129 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 		return nil, err
 	}
 	return result, nil
+}
+
+// mapParams : mapping query params to iterface
+func mapParams(queryParams map[string][]string, mapObj interface{}) (interface{}, error) {
+	var strObj string
+	switch v := mapObj.(type) {
+	// If the obj is type string replace the string values
+	case string:
+		strObj = v
+		matchStr := util.FindMatchStr(constants.QUERY_REGEX, strObj)
+		for _, match := range matchStr {
+			keys := strings.Split(match, ".")[1:]
+			if len(keys) <= 0 {
+				return nil, errors.New("cannot bind JSON object to string")
+			}
+			if len(keys) > 2 {
+				return nil, errors.New("invalid pattern for query  params")
+			}
+			var key = keys[0]
+			var strIndex string
+			if len(keys) == 2 {
+				strIndex = keys[1]
+			} else {
+				strIndex = "0"
+			}
+
+			val, ok := queryParams[key]
+			if !ok {
+				return nil, errors.New("invalid query params")
+			}
+			index, err := strconv.Atoi(strIndex)
+			if err != nil {
+				return nil, errors.New("query param index can only be integer")
+			}
+			if index < 0 || index >= len(val) {
+				return nil, errors.New("query param index out of range")
+			}
+			strObj = strings.Replace(strObj, match, val[index], 1)
+		}
+		return strObj, nil
+	// If the obj is type map replace the map values with whole object or replace recurrsively for each key in map
+	case map[string]interface{}:
+		for key, val := range v {
+			str, ok := val.(string)
+			if ok && str == "$$queryParams" {
+				v[key] = queryParams
+			} else {
+				resp, err := mapParams(queryParams, val)
+				if err != nil {
+					return nil, errors.New("invalid query param")
+				}
+				v[key] = resp
+			}
+		}
+		return v, nil
+
+	default:
+		return nil, errors.New("invalid obj type")
+	}
+}
+
+// mapBody : mapping body to iterface
+func mapBody(bodyJSON map[string]interface{}, mapObj interface{}) (interface{}, error) {
+	var strObj string
+	switch v := mapObj.(type) {
+	// If the obj is type string replace the string values
+	case string:
+		strObj = v
+		matchStr := util.FindMatchStr(constants.BODY_REGEX, strObj)
+		var inputValue interface{}
+		for _, match := range matchStr {
+			keys := strings.Split(match, ".")[1:]
+			if len(keys) <= 0 {
+				return nil, errors.New("cannot bind JSON object to string")
+			}
+			var err error
+			inputValue, err = findValue(bodyJSON, keys)
+			if err != nil {
+				log.Println("mapBody err", err)
+				return nil, errors.New("key not found in input body for " + match)
+			}
+			res, ok := inputValue.(string)
+			if ok {
+				strObj = strings.Replace(strObj, match, res, 1)
+				inputValue = strObj
+			}
+		}
+		return inputValue, nil
+	// If the obj is type map replace the map values with whole object or replace recurrsively for each key in map
+	case map[string]interface{}:
+		for key, val := range v {
+			str, ok := val.(string)
+			if ok && str == "$$body" {
+				v[key] = bodyJSON
+			} else {
+				resp, err := mapBody(bodyJSON, val)
+				if err != nil {
+					fmt.Println(err)
+					return nil, errors.New("invalid body key")
+				}
+				v[key] = resp
+			}
+		}
+		return v, nil
+	default:
+		return nil, errors.New("invalid obj type")
+	}
+}
+func findValue(bodyJson map[string]interface{}, keys []string) (interface{}, error) {
+	itrMap := bodyJson
+	var resp interface{}
+	for i := 0; i < len(keys)-1; i++ {
+		if itrMap[keys[i]] != nil {
+			var ok bool
+			itrMap, ok = itrMap[keys[i]].(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("key not found")
+			}
+		} else {
+			return nil, fmt.Errorf("Key %s not found", keys[i])
+		}
+	}
+	resp = itrMap[keys[len(keys)-1]]
+	return resp, nil
+
 }

@@ -51,3 +51,10 @@ const PID_FILE = "/tmp/workflow.pid"
 
 // Database file path
 const DB_PATH = "./configs/engine-configs/workflow.db"
+
+// Regex patterns
+
+const (
+	BODY_REGEX  string = `\$\$body(\.[a-zA-Z0-9]*)*`
+	QUERY_REGEX        = `\$\$queryParams(\.[a-zA-Z0-9]*)*`
+)

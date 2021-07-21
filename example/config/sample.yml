@@ -17,7 +17,7 @@ steps:
   - id: step1
     type: api
     authorize: true
-    endpoint: 'http://api.plos.org/search?q=title:$$body.title'
+    endpoint: 'http://api.plos.org/search?q=title:$$queryParams.title'
     method: GET
     payload: $$body
     include-headers: true
