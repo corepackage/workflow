@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/corepackage/workflow/pkg/engine"
-	"github.com/corepackage/workflow/pkg/parser"
+	"github.com/corepackage/workflow/pkg/workflow"
 	"github.com/gorilla/mux"
 )
 
@@ -20,7 +20,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Checking workflow status
-	config, err := parser.GetWorkflowConfig(workflowID)
+	config, err := workflow.GetConfig(workflowID)
 	if err != nil {
 		log.Println("WorkflowHandler: Error initializing workflow")
 
@@ -45,7 +45,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	// getting query data
 
 	queryParams := r.URL.Query()
-	bodyJson := make(map[string]interface{})
+	var bodyJson interface{}
 	if r.Method != http.MethodGet {
 		byteArray, err := ioutil.ReadAll(r.Body)
 		if err != nil {

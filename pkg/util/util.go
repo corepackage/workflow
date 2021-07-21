@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"path/filepath"
+	"regexp"
 )
 
 // Validating input file
@@ -40,4 +41,10 @@ func ParseData(body io.ReadCloser) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+// FindMatchStr : to find substrings matching a regex
+func FindMatchStr(regex string, str string) []string {
+	re := regexp.MustCompile(regex)
+	return re.FindAllString(str, -1)
 }

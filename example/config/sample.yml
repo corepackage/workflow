@@ -17,7 +17,7 @@ steps:
   - id: step1
     type: api
     authorize: true
-    endpoint: 'http://api.plos.org/search?q=title:$$body.title'
+    endpoint: 'https://postman-echo.com/get?foo1=$$body.data.0.key&foo2=$$body.ref.key.refId'
     method: GET
     payload: $$body
     include-headers: true

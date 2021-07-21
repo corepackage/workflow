@@ -7,7 +7,7 @@ import (
 )
 
 // Running the workflow
-func (wf *Workflow) Run(headers map[string][]string, queryParams map[string][]string, body map[string]interface{}) (interface{}, error) {
+func (wf *Workflow) Run(headers map[string][]string, queryParams map[string][]string, body interface{}) (interface{}, error) {
 	// fmt.Println(wf.Steps[0])
 
 	resp := make(map[string]interface{})
@@ -15,7 +15,7 @@ func (wf *Workflow) Run(headers map[string][]string, queryParams map[string][]st
 	for _, step := range wf.Steps {
 		var err error
 		if step.Type == constants.API_STEP {
-			resp[step.ID], err = step.APIStep.Execute(wf, headers, queryParams, body)
+			resp[step.ID], err = step.APIStep.Execute(wf, headers, queryParams, NewInputBody(body))
 		}
 		if err != nil {
 			log.Println("Run : Error executing API step")
