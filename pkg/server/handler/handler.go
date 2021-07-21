@@ -45,7 +45,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	// getting query data
 
 	queryParams := r.URL.Query()
-	bodyJson := make(map[string]interface{})
+	var bodyJson interface{}
 	if r.Method != http.MethodGet {
 		byteArray, err := ioutil.ReadAll(r.Body)
 		if err != nil {
