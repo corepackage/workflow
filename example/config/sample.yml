@@ -17,7 +17,7 @@ steps:
   - id: step1
     type: api
     authorize: true
-    endpoint: 'https://postman-echo.com/get?foo1=$$body.data.0.key&foo2=$$body.ref.key.refId'
+    endpoint: 'https://postman-echo.com/get?foo1=$$body.data.0.key&foo2=$$testStep.ref.key'
     method: GET
     payload: $$body
     include-headers: true

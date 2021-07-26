@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -33,53 +34,78 @@ type APIStep struct {
 type queryParams map[string][]string
 
 type inputBody interface {
-	mapBody(interface{}) (interface{}, error)
+	mapData(string, interface{}) (interface{}, error)
 }
 
-// type bodyJSON struct{}
-type bodyJSON struct {
+// type JSONData struct{}
+type JSONData struct {
+	key  string
 	data interface{}
 }
-
-func NewInputBody(data interface{}) *bodyJSON { return &bodyJSON{data} }
 
 // Execute : executing the logic function
 func (l *LogicStep) Execute() {
 }
 
-func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, body inputBody) (interface{}, error) {
-	var result interface{}
+func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, context map[string]interface{}) (interface{}, error) {
+	var (
+		endpointIF, result interface{}
+	)
+	var payload *bytes.Buffer
+	var err error
+	var ok bool
 	var endpoint = api.Endpoint
 
+	// Mapping Data from previous steps and client request to endpoint
+	var jsonData JSONData
+	endpointIF = endpoint
+	for key, val := range context {
+		jsonData.key = key
+		jsonData.data = val
+		endpointIF, err = jsonData.mapData(endpointIF)
+		if err != nil {
+			log.Printf("API Execute : error mapping data endpoint for %v with err %v ", key, err)
+			return nil, errors.New("invalid expression for mapping data in endpoint")
+		}
+
+	}
 	// Making http request for get
 	if api.Method == http.MethodGet {
-
-		resp, err := queryParams.mapParams(api.Endpoint)
+		endpointIF, err = queryParams.mapParams(api.Endpoint)
 		if err != nil {
 			log.Println("API Execute : error mapping params ", err)
 			return nil, errors.New("invalid expression for query params in endpoint")
 		}
-		var ok bool
-		endpoint, ok = resp.(string)
-		if !ok {
-			log.Println("expected string after mapping")
-			return nil, errors.New("API Execute : unexpected error")
-		}
-		resp, err = body.mapBody(endpoint)
-		if err != nil {
-			log.Println("API Execute : error mapping body ", err)
-			return nil, errors.New("invalid expression for body in endpoint")
-		}
-		endpoint, ok = resp.(string)
-		if !ok {
-			log.Println("expected string after mapping")
-			return nil, errors.New("API Execute : unexpected error")
-		}
-		fmt.Println(endpoint)
+	} else {
+		if api.Payload != nil {
+			payloadIF := api.Payload
+			for key, val := range context {
+				jsonData.key = key
+				jsonData.data = val
+				payloadIF, err = jsonData.mapData(payloadIF)
+				if err != nil {
+					log.Printf("API Execute : error mapping data payload for %v with err %v ", key, err)
+					return nil, errors.New("invalid expression for mapping data in payload")
+				}
 
+			}
+			byteArray, err := json.Marshal(payloadIF)
+			if err != nil {
+				log.Println("API Execute : error marshalling payload ", err)
+				return nil, errors.New("invalid expression for payload")
+			}
+			payload = bytes.NewBuffer(byteArray)
+		}
 	}
+
+	endpoint, ok = endpointIF.(string)
+	if !ok {
+		log.Println("expected string after mapping")
+		return nil, errors.New("API Execute : unexpected error")
+	}
+
 	//get request http
-	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
+	req, err := http.NewRequest(api.Method, endpoint, payload)
 	if err != nil {
 		log.Println("API Step Execute err :", err)
 		return nil, err
@@ -177,25 +203,25 @@ func (queryParams queryParams) mapParams(mapObj interface{}) (interface{}, error
 	}
 }
 
-// mapBody : mapping body to iterface
-func (body bodyJSON) mapBody(mapObj interface{}) (interface{}, error) {
+// mapData : mapping body to iterface
+func (body JSONData) mapData(mapObj interface{}) (interface{}, error) {
 	var strObj string
 	switch v := mapObj.(type) {
 	// If the obj is type string replace the string values
 	case string:
 		strObj = v
-		matchStr := util.FindMatchStr(constants.BODY_REGEX, strObj)
+		matchStr := util.FindMatchStr(strings.ReplaceAll(constants.DATA_REGEX, "[[key]]", body.key), strObj)
 		var inputValue interface{}
-		fmt.Println(matchStr)
 		for _, match := range matchStr {
 			keys := strings.Split(match, ".")[1:]
+			// keys[0] = strings.TrimLeft(keys[0], "$")
 			if len(keys) <= 0 {
 				return nil, errors.New("cannot bind JSON object to string")
 			}
 			var err error
 			inputValue, err = findValue(body.data, keys)
 			if err != nil {
-				log.Println("mapBody err", err)
+				log.Println("mapData err", err)
 				return nil, errors.New("key not found in input body for " + match)
 			}
 			res, ok := inputValue.(string)
@@ -209,10 +235,10 @@ func (body bodyJSON) mapBody(mapObj interface{}) (interface{}, error) {
 	case map[string]interface{}:
 		for key, val := range v {
 			str, ok := val.(string)
-			if ok && str == "$$body" {
+			if ok && str == "$$"+body.key {
 				v[key] = body
 			} else {
-				resp, err := body.mapBody(val)
+				resp, err := body.mapData(val)
 				if err != nil {
 					fmt.Println(err)
 					return nil, errors.New("invalid body key")
