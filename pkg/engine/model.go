@@ -52,6 +52,7 @@ type Step struct {
 	NextStep      string             `json:"next-step" yaml:"next-step"`
 	Users         []string           `json:"users" yaml:"users"`
 	Break         bool               `json:"break" yaml:"break"`
+	Payload       interface{}        `json:"payload" yaml:"payload"`
 	Error         *StepError         `json:"on-error" yaml:"on-error"`
 	PreCondition  interface{}        `json:"pre-condition" yaml:"pre-condition"`
 	PostCondition interface{}        `json:"post-condition" yaml:"post-condition"`

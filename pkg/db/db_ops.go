@@ -55,7 +55,6 @@ func GetSingelConfig(workflowID, version string) WorkflowConfig {
 // GetActiveConfig : to get active config of the workflow
 func GetActiveConfig(workflowID string) WorkflowConfig {
 	c := getActiveConfig(workflowID)
-
 	result := WorkflowConfig{WorkflowID: c.WorkflowID, Version: c.Version, Active: c.Active, FileExt: c.FileExt}
 
 	return result
