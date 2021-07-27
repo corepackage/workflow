@@ -20,15 +20,16 @@ type LogicStep struct {
 	Runtime constants.Runtime `json:"runtime" yaml:"runtime"`
 	ExePath string            `json:"exe-path" yaml:"exe-path"`
 	Handler string            `json:"handler" yaml:"handler"`
+	payload interface{}
 }
 
 // APIStep - properties explicit to logic type step
 type APIStep struct {
 	Endpoint       string            `json:"endpoint" yaml:"endpoint"`
 	Method         string            `json:"method" yaml:"method"`
-	Payload        interface{}       `json:"payload" yaml:"payload"`
 	IncludeHeaders bool              `json:"include-headers" yaml:"include-headers"`
 	CustomHeaders  map[string]string `json:"custom-headers" yaml:"custom-headers"`
+	payload        interface{}
 }
 
 type queryParams map[string][]string
@@ -77,8 +78,8 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 			return nil, errors.New("invalid expression for query params in endpoint")
 		}
 	} else {
-		if api.Payload != nil {
-			payloadIF := api.Payload
+		if api.payload != nil {
+			payloadIF := api.payload
 			for key, val := range context {
 				jsonData.key = key
 				jsonData.data = val
@@ -87,7 +88,6 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 					log.Printf("API Execute : error mapping data payload for %v with err %v ", key, err)
 					return nil, errors.New("invalid expression for mapping data in payload")
 				}
-
 			}
 			byteArray, err := json.Marshal(payloadIF)
 			if err != nil {
@@ -211,15 +211,21 @@ func (body JSONData) mapData(mapObj interface{}) (interface{}, error) {
 	case string:
 		strObj = v
 		matchStr := util.FindMatchStr(strings.ReplaceAll(constants.DATA_REGEX, "[[key]]", body.key), strObj)
-		var inputValue interface{}
+		inputValue := mapObj
+
 		for _, match := range matchStr {
-			keys := strings.Split(match, ".")[1:]
+			keys := strings.Split(match, ".")
 			// keys[0] = strings.TrimLeft(keys[0], "$")
-			if len(keys) <= 0 {
-				return nil, errors.New("cannot bind JSON object to string")
+			// if len(keys) <= 0 {
+			// 	return nil, errors.New("cannot bind JSON object to string")
+			// }
+			if len(keys) == 1 && keys[0] == "$$"+body.key {
+				inputValue = body.data
+				return inputValue, nil
 			}
+			keys = keys[1:]
 			var err error
-			inputValue, err = findValue(body.data, keys)
+			inputValue, err = util.FindValue(body.data, keys)
 			if err != nil {
 				log.Println("mapData err", err)
 				return nil, errors.New("key not found in input body for " + match)
@@ -236,39 +242,46 @@ func (body JSONData) mapData(mapObj interface{}) (interface{}, error) {
 		for key, val := range v {
 			str, ok := val.(string)
 			if ok && str == "$$"+body.key {
-				v[key] = body
+				v[key] = body.data
 			} else {
 				resp, err := body.mapData(val)
 				if err != nil {
 					fmt.Println(err)
-					return nil, errors.New("invalid body key")
+					return nil, errors.New("invalid data key in map" + body.key)
 				}
 				v[key] = resp
 			}
 		}
 		return v, nil
+	case map[interface{}]interface{}:
+		newMap := make(map[string]interface{})
+		for key, val := range v {
+			str, ok := val.(string)
+			if ok && str == "$$"+body.key {
+				newMap[fmt.Sprintf("%v", key)] = body.data
+			} else {
+				resp, err := body.mapData(val)
+				if err != nil {
+					fmt.Println(err)
+					return nil, errors.New("invalid data key in map" + body.key)
+				}
+				newMap[fmt.Sprintf("%v", key)] = resp
+			}
+		}
+		return newMap, nil
+	case []interface{}:
+		for i, val := range v {
+			resp, err := body.mapData(val)
+			if err != nil {
+				return nil, errors.New("invalid data key in array" + body.key)
+			}
+			v[i] = resp
+		}
+		return v, nil
+	case int, float64, bool:
+		return mapObj, nil
 	default:
+		fmt.Println("deafult", mapObj)
 		return nil, errors.New("invalid obj type")
 	}
-}
-func findValue(bodyJson interface{}, keys []string) (interface{}, error) {
-	itrMap := bodyJson
-	for i := 0; i < len(keys); i++ {
-		index, err := strconv.Atoi(keys[i])
-		if err != nil {
-			mapObj, ok := itrMap.(map[string]interface{})
-			if !ok {
-				return nil, fmt.Errorf("invalid key %v for the input body", keys[i])
-			}
-			itrMap = mapObj[keys[i]]
-		} else {
-			arrObj, ok := itrMap.([]interface{})
-			if !ok {
-				return nil, fmt.Errorf("invalid key %v for the input body", keys[i])
-			}
-			itrMap = arrObj[index]
-		}
-	}
-	return itrMap, nil
-
 }

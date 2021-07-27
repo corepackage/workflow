@@ -16,7 +16,10 @@ func (wf *Workflow) Run(headers map[string][]string, queryParams map[string][]st
 	// TODO: fetching instance from db
 	for _, step := range wf.Steps {
 		var err error
+		// var payload interface{}
+		// payload = util.ConvertToInterface(step.Payload)
 		if step.Type == constants.API_STEP {
+			step.APIStep.payload = step.Payload
 			context[step.ID], err = step.APIStep.Execute(wf, headers, queryParams, context)
 		}
 		if err != nil {
