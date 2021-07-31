@@ -1,5 +1,5 @@
 name: 'Sample Workflow1'
-id: 'wf1'
+id: 'wf2'
 primary-key:
   - key: 'key2'
     input: '$$body.ID'
@@ -27,10 +27,10 @@ steps:
     include-headers: true
     custom-headers:
       api-key: 10
-    async: true
+    async: false
     delay: 500ms
     break: true
-    timeout: 15ms
+    timeout: 5s
 
   - id: step2
     name: 'my first step'

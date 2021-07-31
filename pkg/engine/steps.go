@@ -43,12 +43,16 @@ type JSONData struct {
 	key  string
 	data interface{}
 }
-
-// Execute : executing the logic function
-func (l *LogicStep) Execute() {
+type ExecuteStep interface {
+	Execute(*Workflow, map[string][]string, queryParams, map[string]interface{}) (interface{}, error)
 }
 
-func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, context map[string]interface{}) (interface{}, error) {
+// Execute : executing the logic function
+func (l LogicStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, userContext map[string]interface{}) (interface{}, error) {
+	return nil, nil
+}
+
+func (api APIStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, userContext map[string]interface{}) (interface{}, error) {
 	var (
 		endpointIF, result interface{}
 	)
@@ -56,11 +60,12 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 	var err error
 	var ok bool
 	var endpoint = api.Endpoint
-
+	// TODO: Remove this after testing
+	// time.Sleep(10 * time.Second)
 	// Mapping Data from previous steps and client request to endpoint
 	var jsonData JSONData
 	endpointIF = endpoint
-	for key, val := range context {
+	for key, val := range userContext {
 		jsonData.key = key
 		jsonData.data = val
 		endpointIF, err = jsonData.mapData(endpointIF)
@@ -80,7 +85,7 @@ func (api *APIStep) Execute(wf *Workflow, headers map[string][]string, queryPara
 	} else {
 		if api.payload != nil {
 			payloadIF := api.payload
-			for key, val := range context {
+			for key, val := range userContext {
 				jsonData.key = key
 				jsonData.data = val
 				payloadIF, err = jsonData.mapData(payloadIF)

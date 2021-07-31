@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 // Validating input file
@@ -72,4 +73,13 @@ func FindValue(bodyJson interface{}, keys []string) (interface{}, error) {
 	}
 	return itrMap, nil
 
+}
+
+// ToTime : to convert string to time
+func ToTime(str string) (time.Duration, error) {
+	t, err := time.ParseDuration(str)
+	if err != nil {
+		return 0, fmt.Errorf("time is not valid")
+	}
+	return t, nil
 }

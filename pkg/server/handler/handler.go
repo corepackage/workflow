@@ -8,12 +8,19 @@ import (
 	"strings"
 
 	"github.com/corepackage/workflow/pkg/engine"
+	"github.com/corepackage/workflow/pkg/server/middleware"
 	"github.com/corepackage/workflow/pkg/workflow"
 	"github.com/gorilla/mux"
 )
 
 func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
+	reqCtx, ok := r.Context().Value(middleware.KeyRequest{}).(*http.Request)
+	if !ok {
+		log.Println("no context")
+		http.Error(w, "no context", http.StatusInternalServerError)
+		return
+	}
+	vars := mux.Vars(reqCtx)
 	// w.Write([]byte("Invoking " + vars["workflowId"]))
 	workflowID := vars["workflowId"]
 	if workflowID == "" {
@@ -36,7 +43,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validating workflow access policy
-	err = engine.Validate(r, w, config)
+	err = engine.Validate(reqCtx, w, config)
 	if err != nil {
 		log.Println("WorkflowHandler : validation failed")
 		return
@@ -44,10 +51,10 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 
 	// getting query data
 
-	queryParams := r.URL.Query()
+	queryParams := reqCtx.URL.Query()
 	var bodyJson interface{}
 	if r.Method != http.MethodGet {
-		byteArray, err := ioutil.ReadAll(r.Body)
+		byteArray, err := ioutil.ReadAll(reqCtx.Body)
 		if err != nil {
 			log.Println("WorkflowHandler : Error fetching body json")
 			w.WriteHeader(http.StatusBadRequest)
@@ -60,7 +67,7 @@ func WorkflowHandler(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("invalid request data"))
 		}
 	}
-	resp, err := config.Run(r.Header, queryParams, bodyJson)
+	resp, err := config.Run(r.Context(), reqCtx.Header, queryParams, bodyJson)
 	if err != nil {
 		log.Println("WorkflowHandler : Error running workflow")
 		w.WriteHeader(http.StatusInternalServerError)
