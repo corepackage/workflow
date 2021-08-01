@@ -1,5 +1,5 @@
 name: 'Sample Workflow1'
-id: 'wf2'
+id: 'wf1'
 primary-key:
   - key: 'key2'
     input: '$$body.ID'
@@ -29,20 +29,21 @@ steps:
       api-key: 10
     async: false
     delay: 500ms
-    break: true
-    timeout: 5s
+    break: false
 
   - id: step2
     name: 'my first step'
     type: logic
-    runtime: 'python'
-    exe-path: '/tmp/path'
+    runtime: 'os'
+    exe-path: '/home/adamantine/Workspace/mock/logic/logic'
     handler: main
-    async: true
+    async: false
     delay: 500ms
-    timeout: 15ms
+    timeout: 15s
     next-step: 'step2'
-    payload: $$body
+    params:
+      body: '$$body'
+      step1: '$$step1.fornextstep'
     pre-condition:
       - if:
         when: 'abcd == efgh'

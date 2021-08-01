@@ -2,12 +2,14 @@ package engine
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -20,7 +22,7 @@ type LogicStep struct {
 	Runtime constants.Runtime `json:"runtime" yaml:"runtime"`
 	ExePath string            `json:"exe-path" yaml:"exe-path"`
 	Handler string            `json:"handler" yaml:"handler"`
-	payload interface{}
+	Params  interface{}       `json:"params" yaml:"params"`
 }
 
 // APIStep - properties explicit to logic type step
@@ -29,7 +31,7 @@ type APIStep struct {
 	Method         string            `json:"method" yaml:"method"`
 	IncludeHeaders bool              `json:"include-headers" yaml:"include-headers"`
 	CustomHeaders  map[string]string `json:"custom-headers" yaml:"custom-headers"`
-	payload        interface{}
+	Payload        interface{}       `json:"payload" yaml:"payload"`
 }
 
 type queryParams map[string][]string
@@ -49,7 +51,64 @@ type ExecuteStep interface {
 
 // Execute : executing the logic function
 func (l LogicStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, userContext map[string]interface{}) (interface{}, error) {
-	return nil, nil
+	fmt.Println("executing logic step")
+	var jsonData JSONData
+	var err error
+	var encParams string
+	var resp interface{}
+	if l.Params != nil {
+		paramsIF := l.Params
+		for key, val := range userContext {
+			jsonData.key = key
+			jsonData.data = val
+			paramsIF, err = jsonData.mapData(paramsIF)
+			if err != nil {
+				log.Printf("Logic Execute : error mapping data params for %v with err %v ", key, err)
+				return nil, errors.New("invalid expression for mapping data in params")
+			}
+		}
+		byteArray, err := json.Marshal(paramsIF)
+		if err != nil {
+			log.Println("Logic Execute : error marshalling params ", err)
+			return nil, errors.New("invalid expression for params")
+		}
+		encParams = base64.StdEncoding.EncodeToString(byteArray)
+	}
+	cmd := exec.Command(l.ExePath, "-wfParams", encParams, "-wfInvoker", "true")
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	if err := cmd.Run(); err != nil {
+		log.Println("Logic Execute: error running binary check the path ", err)
+		return nil, errors.New("error running binary check the path")
+	}
+
+	// Reading output data
+	// read data from cmd.Stdout
+	exeResp := out.String()
+
+	strArray := strings.Split(exeResp, "\n")
+
+	for _, str := range strArray {
+		prefix := strings.HasPrefix(str, "[[##WORKFLOW-START##]]")
+		suffix := strings.HasSuffix(str, "[[##WORKFLOW-END##]]")
+		if prefix && suffix {
+			encStr := strings.TrimPrefix(str, "[[##WORKFLOW-START##]]")
+			encStr = strings.TrimSuffix(encStr, "[[##WORKFLOW-END##]]")
+			paramsBytes, err := base64.StdEncoding.DecodeString(encStr)
+			if err != nil {
+				fmt.Println(err)
+				return nil, errors.New("error in logic ouput")
+			}
+			// convert byte array to interface
+			err = json.Unmarshal(paramsBytes, &resp)
+			if err != nil {
+				fmt.Println(err)
+				return nil, errors.New("error in logic ouput decoding")
+			}
+			fmt.Println(resp)
+		}
+	}
+	return resp, nil
 }
 
 func (api APIStep) Execute(wf *Workflow, headers map[string][]string, queryParams queryParams, userContext map[string]interface{}) (interface{}, error) {
@@ -83,8 +142,8 @@ func (api APIStep) Execute(wf *Workflow, headers map[string][]string, queryParam
 			return nil, errors.New("invalid expression for query params in endpoint")
 		}
 	} else {
-		if api.payload != nil {
-			payloadIF := api.payload
+		if api.Payload != nil {
+			payloadIF := api.Payload
 			for key, val := range userContext {
 				jsonData.key = key
 				jsonData.data = val
