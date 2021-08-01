@@ -9,13 +9,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/cryptography"
-	"github.com/coredevelopment/workflow/pkg/db"
-	"github.com/coredevelopment/workflow/pkg/parser"
-	"github.com/coredevelopment/workflow/pkg/server"
-	"github.com/coredevelopment/workflow/pkg/util"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/cryptography"
+	"github.com/corepackage/workflow/pkg/db"
+	"github.com/corepackage/workflow/pkg/engine"
+	"github.com/corepackage/workflow/pkg/server"
+	"github.com/corepackage/workflow/pkg/util"
+	"github.com/corepackage/workflow/pkg/workflow"
 )
 
 // RunEngine - To start the workflow engine
@@ -23,17 +23,19 @@ func RunEngine() {
 
 	// Getting flags respective to run command
 	runSet := flag.NewFlagSet("", flag.ExitOnError)
-	runSet.IntVar(&models.EngConfig.Port, constants.PORT, 7200, "Specific port to start the engine")
-	runSet.IntVar(&models.EngConfig.Port, constants.PORT_SHORT, 7200, "Specific port to start the engine")
-	runSet.StringVar(&models.EngConfig.Prefix, constants.PATH, "", "Specific port to start the engine")
+	var port int
+	var prefix string
+	runSet.IntVar(&port, constants.PORT, 7200, "Specific port to start the engine")
+	runSet.IntVar(&port, constants.PORT_SHORT, 7200, "Specific port to start the engine")
+	runSet.StringVar(&prefix, constants.PATH, "", "Specific port to start the engine")
 
+	engine.SetConfig(port, prefix)
 	// Check to see if run in detach mode
 	var isDetached bool
 	runSet.BoolVar(&isDetached, constants.DETACH, false, "Specific port to start the engine")
 	runSet.BoolVar(&isDetached, constants.DETACH_SHORT, false, "Specific port to start the engine")
 	runSet.Parse(os.Args[2:])
 
-	// TODO: Handler running in background
 	// Starting instances of workflow server
 	var err error
 	if isDetached {
@@ -42,7 +44,7 @@ func RunEngine() {
 		err = server.Start()
 	}
 	if err != nil {
-		fmt.Println(err)
+		log.Println("RunEngine : error starting server ", err)
 		return
 	}
 }
@@ -56,7 +58,7 @@ func StopEngine() {
 	if len(os.Args) <= 2 {
 		fmt.Println("Stopping the engine")
 		if err := server.Stop(); err != nil {
-			fmt.Println(err)
+			log.Println("StopEngine: error stopping engine ,", err)
 			os.Exit(1)
 		} else {
 			os.Exit(0)
@@ -76,7 +78,7 @@ func StopEngine() {
 			fmt.Printf("Stopping %v\n", id+":"+version)
 			err := db.DeactivateConfig(id, version)
 			if err != nil {
-				fmt.Println("Error stopping config", err)
+				log.Printf("StopEngine : Error stopping config for ID %v with err %v ", id+":"+version, err)
 			}
 			fmt.Println("Configuration stopped")
 		}
@@ -95,7 +97,7 @@ func PushConfig() {
 		for _, file := range os.Args[2:] {
 			err := util.ValidateFile(file)
 			if err != nil {
-				fmt.Println(err)
+				log.Println("PushConfig :  error", err)
 			} else {
 				files = append(files, file)
 			}
@@ -107,17 +109,17 @@ func PushConfig() {
 		log.Println("Encrypting File: ", file)
 		ext := filepath.Ext(file)
 		// Get the respective data to store in db
-		workflowId, err := parser.GetWorkflowId(file, ext)
+		workflowId, err := workflow.GetID(file, ext)
 		if err != nil {
 			log.Printf("Workflow Id not found for file %s: %v\n", file, err)
 			continue
 		}
-		workflowName, err := parser.GetWorkflowName(file, ext)
+		workflowName, err := workflow.GetName(file, ext)
 		if err != nil {
 			log.Printf("Workflow Name not found for file %s: %v\n", file, err)
 			continue
 		}
-		version, err := parser.GetWorkflowVersion(file, ext)
+		version, err := workflow.GetVersion(file, ext)
 		if err != nil {
 			log.Printf("Workflow Version not found taking \"latest\"\n")
 		}
@@ -146,7 +148,7 @@ func ListAll() {
 	runSet.Parse(os.Args[2:])
 
 	// Showing only active configs
-	var configs []models.WorkflowConfig
+	var configs []db.WorkflowConfig
 	if !showActive {
 		configs = db.GetActiveConfigs()
 	} else {
@@ -178,7 +180,7 @@ func Remove() {
 			fmt.Printf("Deleting %v\n", id+":"+version)
 			err := db.DeleteConfig(id, version)
 			if err != nil {
-				fmt.Println("Error deleted config", err)
+				log.Println("Remove: Error deleted config", err)
 			}
 			fmt.Println("Configuration deleted")
 		}

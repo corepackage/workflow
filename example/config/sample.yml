@@ -1,10 +1,8 @@
-name: 'Sample Workflow'
-id: 'Sample ID'
+name: 'Sample Workflow1'
+id: 'wf1'
 primary-key:
-  - key: 'key1'
-    input: 'Header'
   - key: 'key2'
-    input: 'body.ID'
+    input: '$$body.ID'
 authorizer:
   type: jwt
   key: Authorization
@@ -17,15 +15,35 @@ cors:
 
 steps:
   - id: step1
+    type: api
+    authorize: true
+    # endpoint: 'https://postman-echo.com/get?foo1=$$body.data.0.key&foo2=$$testStep.ref.key'
+    endpoint: 'http://localhost:1200/$$testStep.ref.key'
+    method: POST
+    payload:
+      staticdata:
+        mykey: 'my-value'
+      dynamicdata: $$body
+    include-headers: true
+    custom-headers:
+      api-key: 10
+    async: false
+    delay: 500ms
+    break: false
+
+  - id: step2
     name: 'my first step'
     type: logic
-    runtime: 'python'
-    exe-path: '/tmp/path'
+    runtime: 'os'
+    exe-path: '/home/adamantine/Workspace/mock/logic/logic'
     handler: main
-    async: true
+    async: false
     delay: 500ms
-    timeout: 15ms
+    timeout: 15s
     next-step: 'step2'
+    params:
+      body: '$$body'
+      step1: '$$step1.fornextstep'
     pre-condition:
       - if:
         when: 'abcd == efgh'
@@ -34,19 +52,7 @@ steps:
       - else-if:
       - else:
     post-condition:
-    break: true
+    break: false
     error:
       retry: true
       goto:
-
-  - id: step2
-    type: api
-    endpoint: 'https://myendpoint.abcd.com/api'
-    method: GET
-    payload: $$body.json
-    include-headers: true
-    custom-headers:
-      api-key: 10
-    async: true
-    delay: 500ms
-    timeout: 15ms

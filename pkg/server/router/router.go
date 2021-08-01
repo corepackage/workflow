@@ -3,15 +3,15 @@ package router
 import (
 	"path"
 
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/server/handler"
+	"github.com/corepackage/workflow/pkg/engine"
+	"github.com/corepackage/workflow/pkg/server/handler"
 	"github.com/gorilla/mux"
 )
 
 func InitRoutes(r *mux.Router) {
 	r.HandleFunc("/", handler.ServerStatusHandler)
 	// Adding route prefix
-	pathPrefix := models.EngConfig.Prefix
+	pathPrefix := engine.GetEngConfig().Prefix
 	if pathPrefix != "" {
 		pathPrefix = "/" + pathPrefix
 		pathPrefix = path.Clean(pathPrefix)

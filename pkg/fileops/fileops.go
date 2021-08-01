@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -19,8 +21,18 @@ func readline() string {
 
 // WriteToFile : To write file at a particular path
 func WriteToFile(data, file string) error {
-	writeErr := ioutil.WriteFile(file, []byte(data), 777)
-	return writeErr
+
+	// Checking dir
+	if _, err := os.Stat(file); os.IsNotExist(err) {
+		os.MkdirAll(path.Dir(file), 0700)
+	}
+	f, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal("error opening file:", err)
+	}
+	defer f.Close()
+	_, err = f.Write([]byte(data))
+	return err
 }
 func GetFileName(path string) string {
 	return strings.Split(path, "/")[len(strings.Split(path, "/"))-1]

@@ -1,86 +1,137 @@
 package engine
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
+	"fmt"
 	"log"
-	"net/http"
-	"path"
-	"path/filepath"
+	"time"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	"github.com/coredevelopment/workflow/internal/models"
-	"github.com/coredevelopment/workflow/pkg/cryptography"
-	"github.com/coredevelopment/workflow/pkg/db"
-	"github.com/coredevelopment/workflow/pkg/engine/auth"
-	"github.com/coredevelopment/workflow/pkg/engine/cors"
-	"github.com/coredevelopment/workflow/pkg/parser"
+	"github.com/corepackage/workflow/internal/constants"
+	"github.com/corepackage/workflow/pkg/util"
 )
 
-// GetWorkflowConfig : to check status of workflow
-func GetWorkflowConfig(workflowID string) (*models.Workflow, error) {
-	config := db.GetActiveConfig(workflowID)
-
-	// Checking workflow id
-	if config.WorkflowID == "" {
-		log.Println("GetWorkflowConfig : Workflow id is invalid")
-		return nil, errors.New("Invalid workflow Id")
-	}
-
-	// Checking workflow status
-	if !config.Active {
-		log.Println("GetWorkflowConfig : Workflow is inactive")
-		return nil, errors.New("Workflow is inactive")
-	}
-
-	// Decrypting configuration
-	filename := config.WorkflowID + "_" + config.Version
-	filePath := path.Join(filepath.FromSlash(constants.ENC_BASE_DIR), filename)
-	byteData, err := cryptography.Decrypt(filePath)
-	if err != nil {
-		log.Println("GetWorkflowConfig : Error decrypting configuration", err)
-		return nil, errors.New("GetWorkflowConfig : Error decrypting config")
-	}
-	var wf *models.Workflow
-	// Parsing config
-	if config.FileExt == ".yml" || config.FileExt == ".yaml" {
-		wf, err = parser.FileYamlUnmarshal(byteData)
-		if err != nil {
-			log.Println("GetWorkflowConfig : Error parsing config")
-			return nil, errors.New("GetWorkflowConfig : Error parsing config")
-		}
-	}
-	return wf, nil
+type Resp struct {
+	stepID string
+	resp   interface{}
 }
 
-// Init : Starting point of workflow engine
-func Init(r *http.Request, w http.ResponseWriter, wf *models.Workflow) {
-	// Marshalling user data to interface
-	userData := make(map[string]interface{})
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&userData)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Unable to parse user data"))
-		return
+// Running the workflow
+func (wf *Workflow) Run(ctx context.Context, headers map[string][]string, queryParams map[string][]string, body interface{}) (interface{}, error) {
+	// fmt.Println(wf.Steps[0])
+
+	userCtx := make(map[string]interface{})
+	userCtx["body"] = body
+	// TODO: fetching instance from db
+	var lastID string
+	waitCh := make(chan struct{})
+	ctxCh := make(chan struct{})
+	errCh := make(chan error)
+	respCh := make(chan Resp, 10)
+
+	// writing resonse to userContext
+	go func() {
+		for v := range respCh {
+			userCtx[v.stepID] = v.resp
+		}
+	}()
+
+	for _, step := range wf.Steps {
+		var err error
+		lastID = step.ID
+
+		// verifying step type
+		var newStep ExecuteStep
+		if step.Type == constants.API_STEP {
+			newStep = step.APIStep
+		} else if step.Type == constants.LOGIC_STEP {
+			newStep = step.LogicStep
+		} else {
+			return nil, errors.New("invalid step stype")
+		}
+
+		var (
+			stepCtx context.Context
+			cancel  context.CancelFunc
+		)
+
+		// Preparing timeout if defined
+		if step.Timeout != "" && !step.Async {
+			var timeout time.Duration
+			timeout, err = util.ToTime(step.Timeout)
+			if err != nil {
+				log.Printf("Invalid Timeout value : %v\n", step.Timeout)
+				return nil, err
+			}
+			stepCtx, cancel = context.WithTimeout(ctx, timeout)
+			defer cancel()
+
+			go func() {
+				var err error
+				select {
+				case <-waitCh:
+					fmt.Println("step complete before context")
+					err = nil
+				case <-stepCtx.Done():
+					fmt.Println("context time out")
+					err = errors.New("step execution timeout")
+				}
+				fmt.Println("writing to ctx channel")
+				ctxCh <- struct{}{}
+				errCh <- err
+			}()
+		}
+
+		// If step is synced and delay is specified, wait for delay
+		if !step.Async {
+			// Adding delay to execution
+			var delay time.Duration
+			if step.Delay != "" {
+				delay, err = util.ToTime(step.Delay)
+				if err != nil {
+					log.Printf("Invalid delay value : %v\n", step.Delay)
+					return nil, err
+				}
+			}
+			if delay > 0 {
+				log.Printf("Sleeping for %v\n", delay)
+				time.Sleep(delay)
+			}
+		}
+
+		// Executing the step
+		go func() {
+			resp, err := newStep.Execute(wf, headers, queryParams, userCtx)
+			if !step.Async {
+				waitCh <- struct{}{}
+			}
+			respCh <- Resp{step.ID, resp}
+			errCh <- err
+		}()
+
+		// If step is synced then waiting for timeout or response
+		if !step.Async {
+			fmt.Println("waiting for step to complete")
+			select {
+			case <-ctxCh:
+			case <-waitCh:
+			}
+			fmt.Println("sync step complete")
+			fmt.Println("waiting for error")
+			err = <-errCh
+			fmt.Println("step completed")
+
+			if err != nil {
+				log.Println("Run : Error executing API step")
+				return nil, err
+			}
+			if step.Break {
+				return userCtx[step.ID], nil
+			}
+		}
+		fmt.Println("async step")
+
 	}
-	// headers := (map[string][]string)(r.Header)
-	err = cors.Validate(r, w, wf.CORS)
-	if err != nil {
-		log.Println("Error in CORS Policy")
-		w.Write([]byte("Error in CORS Policy"))
-		return
-	}
-	//TODO: Validate request if authorizer present
-	err = auth.Validate(r, wf.Authorizer)
-	if err != nil {
-		log.Println("Request Not Valid")
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Request Not Valid"))
-		return
-	}
-	//TODO: Load the respective instance or create new instance
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Workflow executed successfully"))
+	return userCtx[lastID], nil
 
 }

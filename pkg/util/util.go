@@ -3,9 +3,13 @@ package util
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"time"
 )
 
 // Validating input file
@@ -40,4 +44,42 @@ func ParseData(body io.ReadCloser) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return p, nil
+}
+
+// FindMatchStr : to find substrings matching a regex
+func FindMatchStr(regex string, str string) []string {
+	re := regexp.MustCompile(regex)
+	return re.FindAllString(str, -1)
+}
+
+// FindValue : to find value from map or array using nested keys
+func FindValue(bodyJson interface{}, keys []string) (interface{}, error) {
+	itrMap := bodyJson
+	for i := 0; i < len(keys); i++ {
+		index, err := strconv.Atoi(keys[i])
+		if err != nil {
+			mapObj, ok := itrMap.(map[string]interface{})
+			if !ok {
+				return nil, fmt.Errorf("invalid key %v for the input body", keys[i])
+			}
+			itrMap = mapObj[keys[i]]
+		} else {
+			arrObj, ok := itrMap.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("invalid key %v for the input body", keys[i])
+			}
+			itrMap = arrObj[index]
+		}
+	}
+	return itrMap, nil
+
+}
+
+// ToTime : to convert string to time
+func ToTime(str string) (time.Duration, error) {
+	t, err := time.ParseDuration(str)
+	if err != nil {
+		return 0, fmt.Errorf("time is not valid")
+	}
+	return t, nil
 }

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/coredevelopment/workflow/internal/constants"
-	fileops "github.com/coredevelopment/workflow/pkg/fileops"
+	"github.com/corepackage/workflow/internal/constants"
+	fileops "github.com/corepackage/workflow/pkg/fileops"
 )
 
 // Decrypt : To decrypt an encrypted file from a specified

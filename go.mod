@@ -1,4 +1,4 @@
-module github.com/coredevelopment/workflow
+module github.com/corepackage/workflow
 
 go 1.16
 
@@ -6,5 +6,5 @@ require (
 	github.com/gorilla/mux v1.8.0
 	gopkg.in/yaml.v2 v2.4.0
 	gorm.io/driver/sqlite v1.1.4
-	gorm.io/gorm v1.21.10
+	gorm.io/gorm v1.21.11
 )
