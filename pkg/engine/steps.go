@@ -105,7 +105,6 @@ func (l LogicStep) Execute(wf *Workflow, headers map[string][]string, queryParam
 				fmt.Println(err)
 				return nil, errors.New("error in logic ouput decoding")
 			}
-			fmt.Println(resp)
 		}
 	}
 	return resp, nil
