@@ -9,7 +9,7 @@ Please note, the project is currently in development.
 To install the necessary dependencies, run the following command on root of the folder
 
 ```
-go mod download
+go get ./...
 ```
 
 ## Installing the engine
@@ -23,6 +23,27 @@ go install ./...
 ## Creating a workflow config
 
 To create a workflow config refer the [sample.yml](example/config/sample.yml) for proper format.
+
+To use dynamic data for the configurations use `$$` prefix before accessing any data from the preceeding steps or request data. This dynamic data can be used in payload, params or api endpoint.
+
+Current version supports the following configurations :
+
+1. Async steps
+2. Delay in executing
+3. Execution timeout
+4. Breakpoint
+
+**NOTE** : Currently, data can be set from query params, inpuy body json or preceeding steps (using step id).
+
+## Types of steps
+
+Current version supports two types of steps :
+
+1. API step : This type of step can be configured to access API endpoints. Workflow automatically calls the API using the configured set in yaml file.
+
+2. LOGIC step : To execute a binary via workflow, setup the path for the exe in workflow and setup the input parameters for the exe. To integrate binaries with workflow use the [workflow-sdk](https://github.com/corepackage/workflow-sdk).
+
+**NOTE:** Currently the workflow supports only go binaries.
 
 ## Pushing the config to workflow
 
